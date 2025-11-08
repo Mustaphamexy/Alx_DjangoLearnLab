@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>List of Books</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        ul { list-style-type: none; padding: 0; }
+        li { 
+            background: #f4f4f4; 
+            margin: 5px 0; 
+            padding: 10px; 
+            border-left: 4px solid #007cba;
+        }
+        a { color: #007cba; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+   <nav style="background: #333; padding: 10px; margin-bottom: 20px;">
+    <div style="max-width: 1200px; margin: 0 auto;">
+        <a href="{% url 'relationship_app:list_books' %}" style="color: white; text-decoration: none; margin-right: 20px;">📚 Books</a>
+        <a href="{% url 'relationship_app:library_list' %}" style="color: white; text-decoration: none; margin-right: 20px;">🏛️ Libraries</a>
+        
+        {% if user.is_authenticated %}
+            <!-- Role-based links -->
+            {% if user.profile.role == 'admin' %}
+                <a href="{% url 'relationship_app:admin_view' %}" style="color: white; text-decoration: none; margin-right: 20px;">🛡️ Admin</a>
+                <a href="{% url 'relationship_app:manage_roles' %}" style="color: white; text-decoration: none; margin-right: 20px;">⚙️ Manage Roles</a>
+            {% elif user.profile.role == 'librarian' %}
+                <a href="{% url 'relationship_app:librarian_view' %}" style="color: white; text-decoration: none; margin-right: 20px;">📖 Librarian</a>
+            {% elif user.profile.role == 'member' %}
+                <a href="{% url 'relationship_app:member_view' %}" style="color: white; text-decoration: none; margin-right: 20px;">👤 Member</a>
+            {% endif %}
+            
+            <a href="{% url 'relationship_app:profile' %}" style="color: white; text-decoration: none; margin-right: 20px;">👤 {{ user.username }}</a>
+            <a href="{% url 'relationship_app:logout' %}" style="color: white; text-decoration: none; margin-right: 20px;">🚪 Logout</a>
+        {% else %}
+            <a href="{% url 'relationship_app:login' %}" style="color: white; text-decoration: none; margin-right: 20px;">🔑 Login</a>
+            <a href="{% url 'relationship_app:register' %}" style="color: white; text-decoration: none; margin-right: 20px;">📝 Register</a>
+        {% endif %}
+    </div>
+</nav>
+    <h1>Books Available:</h1>
+    <ul>
+        {% for book in books %}
+        <li><strong>{{ book.title }}</strong> by {{ book.author.name }}</li>
+        {% empty %}
+        <li>No books available.</li>
+        {% endfor %}
+    </ul>
+    {% if user.is_authenticated and can_add_book %}
+<div style="margin-top: 30px; text-align: center;">
+    <a href="{% url 'relationship_app:add_book' %}" style="background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin-right: 10px;">
+        Add New Book
+    </a>
+    <a href="{% url 'relationship_app:book_management' %}" style="background: #007cba; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
+        Book Management
+    </a>
+</div>
+{% endif %}
+    <div style="margin-top: 20px;">
+        <a href="{% url 'relationship_app:library_list' %}">View All Libraries</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Logout</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5f5; text-align: center; }
+        .logout-container { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; margin-bottom: 20px; }
+        a { color: #007cba; text-decoration: none; margin: 0 10px; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="logout-container">
+        <h1>You have been logged out</h1>
+        <p>Thank you for visiting!</p>
+        <div style="margin-top: 20px;">
+            <a href="{% url 'relationship_app:login' %}">Login again</a> | 
+            <a href="{% url 'relationship_app:list_books' %}">Back to Books</a>
+        </div>
+    </div>
+</body>
+</html>
