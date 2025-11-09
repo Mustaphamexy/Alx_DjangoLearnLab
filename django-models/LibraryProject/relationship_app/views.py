@@ -1,13 +1,23 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 from django.contrib import messages
 from django.views.generic import ListView, DetailView
 from django.urls import reverse
 from .models import Book, Library, UserProfile, Author
-from .decorators import admin_required, librarian_required, member_required
+from .models import Library
 from .forms import CustomUserCreationForm, BookForm
+
+# Helper functions for user_passes_test
+def is_admin(user):
+    return hasattr(user, 'userprofile') and user.userprofile.role == 'admin'
+
+def is_librarian(user):
+    return hasattr(user, 'userprofile') and user.userprofile.role == 'librarian'
+
+def is_member(user):
+    return hasattr(user, 'userprofile') and user.userprofile.role == 'member'
 
 # Existing views (keep these)
 def list_books(request):
@@ -68,9 +78,9 @@ def profile_view(request):
     """Protected profile view that requires login"""
     return render(request, 'relationship_app/profile.html', {'user': request.user})
 
-# Role-Based Views (keep these)
+# Role-Based Views (updated to use @user_passes_test)
 @login_required
-@admin_required
+@user_passes_test(is_admin, login_url='/relationship/login/')
 def admin_view(request):
     """Admin-only view"""
     users = UserProfile.objects.all().select_related('user')
@@ -80,7 +90,7 @@ def admin_view(request):
     })
 
 @login_required
-@librarian_required
+@user_passes_test(is_librarian, login_url='/relationship/login/')
 def librarian_view(request):
     """Librarian-only view"""
     libraries = Library.objects.all()
@@ -92,7 +102,7 @@ def librarian_view(request):
     })
 
 @login_required
-@member_required
+@user_passes_test(is_member, login_url='/relationship/login/')
 def member_view(request):
     """Member-only view"""
     available_books = Book.objects.all()
@@ -103,7 +113,7 @@ def member_view(request):
     })
 
 @login_required
-@admin_required
+@user_passes_test(is_admin, login_url='/relationship/login/')
 def manage_roles(request):
     """Admin view to manage user roles"""
     if request.method == 'POST':

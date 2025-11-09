@@ -1,4 +1,5 @@
 from django.urls import path
+from django.contrib.auth import views as auth_views
 from . import views
 
 app_name = 'relationship_app'
@@ -9,10 +10,10 @@ urlpatterns = [
     path('libraries/', views.LibraryListView.as_view(), name='library_list'),
     path('libraries/<int:pk>/', views.LibraryDetailView.as_view(), name='library_detail'),
     
-    # Authentication URLs
+    # Authentication URLs (using Django's built-in views)
     path('register/', views.register_view, name='register'),
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
+    path('login/', auth_views.LoginView.as_view(template_name='relationship_app/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(template_name='relationship_app/logout.html'), name='logout'),
     path('profile/', views.profile_view, name='profile'),
     
     # Role-Based URLs
