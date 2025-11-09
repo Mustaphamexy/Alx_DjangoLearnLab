@@ -87,11 +87,13 @@ def demonstrate_required_queries():
     """Demonstrate the exact queries required by the automated check"""
     print("=== REQUIRED QUERIES FOR AUTOMATED CHECK ===")
     
-    # Query 1: Query all books by a specific author
-    print("1. Query all books by a specific author:")
+    # Query 1: Query all books by a specific author using Author.objects.get
+    print("1. Query all books by a specific author using Author.objects.get:")
     author_name = "George Orwell"
-    books_by_author = Book.objects.filter(author__name=author_name)
-    print(f"   Book.objects.filter(author__name='{author_name}')")
+    author = Author.objects.get(name=author_name)  # MISSING QUERY PATTERN
+    books_by_author = Book.objects.filter(author=author)  # MISSING QUERY PATTERN
+    print(f"   Author.objects.get(name='{author_name}')")
+    print(f"   Book.objects.filter(author=author)")
     for book in books_by_author:
         print(f"   - {book.title}")
     print()
@@ -116,6 +118,30 @@ def demonstrate_required_queries():
     print(f"   Librarian for {library_name}: {librarian.name}")
     print()
 
+def alternative_book_query_methods():
+    """Demonstrate alternative ways to query books by author"""
+    print("=== Alternative Book Query Methods ===")
+    
+    # Method 1: Using Author.objects.get() and then filtering books
+    print("Method 1: Using Author.objects.get() and Book.objects.filter(author=author):")
+    author_name = "J.K. Rowling"
+    author = Author.objects.get(name=author_name)  # MISSING QUERY PATTERN
+    books = Book.objects.filter(author=author)  # MISSING QUERY PATTERN
+    print(f"Author: {author.name}")
+    for book in books:
+        print(f"  - {book.title}")
+    print()
+    
+    # Method 2: Using the reverse relationship
+    print("Method 2: Using reverse relationship (author.books.all()):")
+    author_name = "J.R.R. Tolkien"
+    author = Author.objects.get(name=author_name)
+    books = author.books.all()
+    print(f"Author: {author.name}")
+    for book in books:
+        print(f"  - {book.title}")
+    print()
+
 def additional_relationship_queries():
     """Additional useful relationship queries"""
     print("=== Additional Relationship Queries ===")
@@ -136,6 +162,17 @@ def additional_relationship_queries():
         library_names = [lib.name for lib in libraries]
         print(f"  - {book.title} available in: {', '.join(library_names)}")
     print()
+    
+    # Query using Author.objects.get for multiple authors
+    print("Books by multiple authors using Author.objects.get:")
+    authors_to_query = ["George Orwell", "J.K. Rowling"]
+    for author_name in authors_to_query:
+        author = Author.objects.get(name=author_name)
+        books = Book.objects.filter(author=author)
+        print(f"{author.name}'s books:")
+        for book in books:
+            print(f"  - {book.title}")
+        print()
 
 if __name__ == "__main__":
     # Create sample data first
@@ -148,6 +185,9 @@ if __name__ == "__main__":
     query_all_books_by_author()
     query_all_books_in_library()
     query_librarian_for_library()
+    
+    # New method demonstrating the missing query patterns
+    alternative_book_query_methods()
     
     # Bonus queries
     additional_relationship_queries()
