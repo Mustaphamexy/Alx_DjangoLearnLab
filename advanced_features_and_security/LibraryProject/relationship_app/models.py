@@ -1,8 +1,9 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser, BaseUserManager, Permission, Group
+from django.contrib.auth.models import AbstractUser, BaseUserManager, Permission
 from django.utils.translation import gettext_lazy as _
-from django.db.models.signals import post_save, post_migrate
+from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 
 class CustomUserManager(BaseUserManager):
@@ -18,6 +19,9 @@ class CustomUserManager(BaseUserManager):
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
+        
+        # Create user profile
+        UserProfile.objects.create(user=user)
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
@@ -33,7 +37,14 @@ class CustomUserManager(BaseUserManager):
         if extra_fields.get('is_superuser') is not True:
             raise ValueError(_('Superuser must have is_superuser=True.'))
 
-        return self.create_user(email, password, **extra_fields)
+        user = self.create_user(email, password, **extra_fields)
+        
+        # Set admin role for superuser
+        user_profile = UserProfile.objects.get(user=user)
+        user_profile.role = 'admin'
+        user_profile.save()
+        
+        return user
 
 class CustomUser(AbstractUser):
     """Custom user model with additional fields"""
@@ -63,153 +74,148 @@ class CustomUser(AbstractUser):
     class Meta:
         verbose_name = _('user')
         verbose_name_plural = _('users')
-
-class Author(models.Model):
-    name = models.CharField(max_length=100)
-    
-    def __str__(self):
-        return self.name
-
-class Book(models.Model):
-    title = models.CharField(max_length=200)
-    author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='books')
-    
-    class Meta:
         permissions = [
-            ("can_add_book", "Can add book"),
-            ("can_change_book", "Can change book"),
-            ("can_delete_book", "Can delete book"),
-            # New custom permissions for this task
             ("can_view", "Can view books"),
-            ("can_create", "Can create books"),
-            ("can_edit", "Can edit books"),
-            ("can_delete", "Can delete books"),
+            ("can_add_book", "Can add books"),
+            ("can_create", "Can create content"),
+            ("can_edit", "Can edit content"),
+            ("can_delete", "Can delete content"),
+            ("can_view_library", "Can view libraries"),
+            ("can_create_library", "Can create libraries"),
+            ("can_edit_library", "Can edit libraries"),
+            ("can_delete_library", "Can delete libraries"),
         ]
-    
-    def __str__(self):
-        return f"{self.title} by {self.author.name}"
 
-class Library(models.Model):
-    name = models.CharField(max_length=100)
-    books = models.ManyToManyField(Book, related_name='libraries')
-    
-    class Meta:
-        verbose_name_plural = "Libraries"
-        # Add custom permissions for Library model
-        permissions = [
-            ("can_view_library", "Can view library"),
-            ("can_create_library", "Can create library"),
-            ("can_edit_library", "Can edit library"),
-            ("can_delete_library", "Can delete library"),
-        ]
-    
-    def __str__(self):
-        return self.name
-
-class Librarian(models.Model):
-    name = models.CharField(max_length=100)
-    library = models.OneToOneField(Library, on_delete=models.CASCADE, related_name='librarian')
-    
-    def __str__(self):
-        return f"{self.name} - {self.library.name}"
-
-# User Profile Model for Role-Based Access Control (now using CustomUser)
 class UserProfile(models.Model):
     ROLE_CHOICES = [
-        ('admin', 'Admin'),
+        ('admin', 'Administrator'),
         ('librarian', 'Librarian'),
         ('member', 'Member'),
     ]
     
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='member')
-    
-    class Meta:
-        permissions = [
-            ("can_manage_roles", "Can manage user roles"),
-        ]
+    user = models.OneToOneField(
+        CustomUser, 
+        on_delete=models.CASCADE, 
+        related_name='profile'
+    )
+    role = models.CharField(
+        max_length=20, 
+        choices=ROLE_CHOICES, 
+        default='member'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.user.email} - {self.get_role_display()}"
+        return f"{self.user.email} - {self.role}"
 
-# Signal to automatically create UserProfile when a new CustomUser is created
 @receiver(post_save, sender=CustomUser)
 def create_user_profile(sender, instance, created, **kwargs):
+    """Create user profile when a new user is created"""
     if created:
-        UserProfile.objects.create(user=instance)
+        UserProfile.objects.get_or_create(user=instance)
 
 @receiver(post_save, sender=CustomUser)
 def save_user_profile(sender, instance, **kwargs):
+    """Save user profile when user is saved"""
     if hasattr(instance, 'profile'):
         instance.profile.save()
+    else:
+        UserProfile.objects.get_or_create(user=instance)
 
-# Signal to create default groups and permissions after migration
-# Signal to create default groups and permissions after migration
-@receiver(post_migrate)
-def create_default_groups(sender, **kwargs):
-    """
-    Creates default groups with appropriate permissions after migrations.
-    This ensures groups exist when the application is set up.
-    """
-    from django.contrib.auth.models import Group, Permission
-    from django.contrib.contenttypes.models import ContentType
+class Author(models.Model):
+    name = models.CharField(max_length=100)
+    bio = models.TextField(blank=True)
+    birth_date = models.DateField(null=True, blank=True)
     
-    # Only run for relationship_app to avoid running multiple times
-    if sender.name != 'relationship_app':
-        return
+    def __str__(self):
+        return self.name
     
-    try:
-        # Get content types specifically from relationship_app
-        book_content_type = ContentType.objects.get(app_label='relationship_app', model='book')
-        library_content_type = ContentType.objects.get(app_label='relationship_app', model='library')
-    except ContentType.DoesNotExist:
-        # If content types don't exist yet, skip group creation
-        print("Content types not found - skipping group creation")
-        return
+    class Meta:
+        ordering = ['name']
+
+class Book(models.Model):
+    title = models.CharField(max_length=200)
+    author = models.ForeignKey(
+        Author, 
+        on_delete=models.CASCADE, 
+        related_name='books'
+    )
+    isbn = models.CharField(max_length=13, unique=True, blank=True)
+    published_date = models.DateField(null=True, blank=True)
+    description = models.TextField(blank=True)
+    cover_image = models.ImageField(
+        upload_to='book_covers/', 
+        null=True, 
+        blank=True
+    )
     
-    # Create or update Groups
-    editors_group, created = Group.objects.get_or_create(name='Editors')
-    viewers_group, created = Group.objects.get_or_create(name='Viewers')
-    admins_group, created = Group.objects.get_or_create(name='Admins')
+    def __str__(self):
+        return f"{self.title} by {self.author.name}"
     
-    # Clear existing permissions to avoid duplicates
-    editors_group.permissions.clear()
-    viewers_group.permissions.clear()
-    admins_group.permissions.clear()
+    class Meta:
+        ordering = ['title']
+
+class Library(models.Model):
+    name = models.CharField(max_length=100)
+    address = models.TextField(blank=True)
+    books = models.ManyToManyField(Book, related_name='libraries', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     
-    # Assign permissions to Editors group (only from relationship_app)
-    editor_perms = [
-        'can_view', 'can_create', 'can_edit',
-        'can_view_library', 'can_create_library', 'can_edit_library'
-    ]
+    def __str__(self):
+        return self.name
     
-    for perm in editor_perms:
-        try:
-            # Use filter().first() to handle multiple permissions with same name
-            permission = Permission.objects.filter(
-                content_type__app_label='relationship_app', 
-                codename=perm
-            ).first()
-            if permission:
-                editors_group.permissions.add(permission)
-        except Exception as e:
-            print(f"Error adding permission {perm}: {e}")
+    class Meta:
+        verbose_name_plural = "Libraries"
+        ordering = ['name']
+
+class Librarian(models.Model):
+    name = models.CharField(max_length=100)
+    library = models.ForeignKey(
+        Library, 
+        on_delete=models.CASCADE, 
+        related_name='librarians'
+    )
+    user_account = models.OneToOneField(
+        CustomUser, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='librarian_profile'
+    )
     
-    # Assign permissions to Viewers group (only from relationship_app)
-    viewer_perms = ['can_view', 'can_view_library']
-    for perm in viewer_perms:
-        try:
-            permission = Permission.objects.filter(
-                content_type__app_label='relationship_app', 
-                codename=perm
-            ).first()
-            if permission:
-                viewers_group.permissions.add(permission)
-        except Exception as e:
-            print(f"Error adding permission {perm}: {e}")
-    
-    # Assign all permissions to Admins group
-    all_perms = Permission.objects.all()
-    admins_group.permissions.set(all_perms)
-    
-    print("Default groups created successfully!")
+    def __str__(self):
+        return f"{self.name} - {self.library.name}"
+
+# Signal to set up default permissions and groups
+@receiver(post_save, sender=ContentType)
+def setup_default_permissions(sender, instance, **kwargs):
+    """Create default groups and permissions if they don't exist"""
+    if instance.app_label == 'relationship_app':
+        # Create default groups
+        admin_group, created = Group.objects.get_or_create(name='Admins')
+        librarian_group, created = Group.objects.get_or_create(name='Librarians') 
+        member_group, created = Group.objects.get_or_create(name='Members')
+        
+        # Get all permissions for this app
+        permissions = Permission.objects.filter(content_type=instance)
+        
+        # Assign permissions to groups
+        if instance.model == 'customuser':
+            # Admins get all permissions
+            for perm in permissions:
+                admin_group.permissions.add(perm)
+            
+            # Librarians get specific permissions
+            librarian_perms = permissions.filter(
+                codename__in=['can_view', 'can_add_book', 'can_create', 'can_edit', 'can_view_library']
+            )
+            for perm in librarian_perms:
+                librarian_group.permissions.add(perm)
+            
+            # Members get basic permissions
+            member_perms = permissions.filter(
+                codename__in=['can_view', 'can_view_library']
+            )
+            for perm in member_perms:
+                member_group.permissions.add(perm)

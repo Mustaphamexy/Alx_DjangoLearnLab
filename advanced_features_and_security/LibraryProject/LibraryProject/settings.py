@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Build paths inside the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -16,16 +16,16 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', get_random_secret_key())
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 
-# Security: Allowed hosts for production - Update with your actual domain
+# Allowed hosts
 ALLOWED_HOSTS = [
-    'localhost', 
-    '127.0.0.1', 
-    '.yourdomain.com',  # Replace with your actual domain
-    '.yourapp.herokuapp.com',  # If deploying to Heroku
-    '.railway.app',  # If deploying to Railway
+    'localhost',
+    '127.0.0.1',
+    '.yourdomain.com',
+    '.yourapp.herokuapp.com',
+    '.railway.app',
 ]
 
-# Security: Application definition
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -33,23 +33,27 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Third-party security apps
-    'csp',  # Content Security Policy
+
+    # Third-party
+    'csp',
+
     # Local apps
     'bookshelf',
     'relationship_app',
 ]
 
-# Security: Middleware configuration
+# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',  # CSRF protection
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',  # Clickjacking protection
-    'csp.middleware.CSPMiddleware',  # Content Security Policy
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # Content Security Policy
+    'csp.middleware.CSPMiddleware',
 ]
 
 ROOT_URLCONF = 'LibraryProject.urls'
@@ -82,106 +86,94 @@ DATABASES = {
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-        'OPTIONS': {
-            'min_length': 8,  # Security: Minimum password length
-        }
+        'OPTIONS': {'min_length': 8}
     },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internationalization
+# ==================== INTERNATIONALIZATION ====================
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+# ==================== STATIC FILES ====================
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'relationship_app/static'),
+]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Media files
+# ==================== MEDIA FILES ====================
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Default primary key field type
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Custom user model
+# ==================== CUSTOM USER ====================
 AUTH_USER_MODEL = 'relationship_app.CustomUser'
 
-# ==================== HTTPS & SECURITY CONFIGURATIONS ====================
+# ==================== AUTHENTICATION SETTINGS ====================
+LOGIN_URL = '/relationship/login/'
+LOGIN_REDIRECT_URL = '/relationship/dashboard/'
+LOGOUT_REDIRECT_URL = '/relationship/'
 
-# Security: HTTPS Settings (for production)
-# These settings are automatically disabled when DEBUG=True
-SECURE_SSL_REDIRECT = not DEBUG  # Redirect HTTP to HTTPS in production
-SECURE_HSTS_SECONDS = 31536000  # 1 year - Force HTTPS for this duration
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True  # Apply HSTS to all subdomains
-SECURE_HSTS_PRELOAD = True  # Allow preloading in HSTS preload lists
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
 
-# Security: Browser Protection Headers
-SECURE_BROWSER_XSS_FILTER = True  # Enable XSS filter in browsers
-X_FRAME_OPTIONS = 'DENY'  # Prevent clickjacking - DENY any framing
-SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent MIME type sniffing
+# ==================== FILE UPLOAD LIMITS ====================
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 
-# Security: Session settings with HTTPS enforcement
-SESSION_COOKIE_SECURE = not DEBUG  # Send session cookie over HTTPS only
-SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Session expires when browser closes
+# ==================== HTTPS & SECURITY ====================
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
 
-# Security: CSRF settings with HTTPS enforcement
-CSRF_COOKIE_SECURE = not DEBUG  # Send CSRF cookie over HTTPS only
-CSRF_COOKIE_HTTPONLY = True  # Make CSRF cookie HTTPOnly
-CSRF_USE_SESSIONS = True  # Store CSRF token in session instead of cookie
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_CONTENT_TYPE_NOSNIFF = True
 
-# Security: Content Security Policy (CSP) Configuration
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = True
+CSRF_USE_SESSIONS = True
+
+SECURE_REFERRER_POLICY = 'same-origin'
+
+# ==================== CONTENT SECURITY POLICY ====================
 CONTENT_SECURITY_POLICY = {
     'DEFAULT_SRC': ["'self'"],
     'SCRIPT_SRC': ["'self'"],
-    'STYLE_SRC': ["'self'", "'unsafe-inline'"],  # Allow inline styles for Django admin
+    'STYLE_SRC': ["'self'", "'unsafe-inline'"],
     'IMG_SRC': ["'self'", "data:"],
     'FONT_SRC': ["'self'"],
     'OBJECT_SRC': ["'none'"],
     'BASE_URI': ["'self'"],
     'FORM_ACTION': ["'self'"],
-    'FRAME_ANCESTORS': ["'none'"],  # Equivalent to X-Frame-Options: DENY
+    'FRAME_ANCESTORS': ["'none'"],
 }
 
-# Security: Additional headers
-SECURE_REFERRER_POLICY = 'same-origin'  # Limit referrer information
-
-# Security: File upload restrictions
-FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB max file upload
-DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880   # 5MB max data upload
-
-# Security: Email backend (for production)
+# ==================== EMAIL SETTINGS ====================
 if not DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    # Configure these in your production environment
-    # EMAIL_HOST = 'smtp.your-email-provider.com'
-    # EMAIL_PORT = 587
-    # EMAIL_USE_TLS = True
-    # EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-    # EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# Security: Logging configuration for security events
+# ==================== LOGGING ====================
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'format': '{levelname} {asctime} {module} {message}',
             'style': '{',
         },
     },
@@ -212,9 +204,8 @@ LOGGING = {
     },
 }
 
-# Security: Additional production settings
+# ==================== PRODUCTION REVERSE PROXY SETTINGS ====================
 if not DEBUG:
-    # Ensure proper content type handling
     USE_X_FORWARDED_HOST = True
     USE_X_FORWARDED_PORT = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
