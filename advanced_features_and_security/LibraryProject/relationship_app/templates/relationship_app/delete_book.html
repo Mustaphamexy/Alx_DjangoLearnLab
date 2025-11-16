@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Delete Book</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+        h1 { color: #dc3545; }
+        .warning { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 4px; margin: 20px 0; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; margin: 0 5px; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Delete Book</h1>
+        
+        <div class="warning">
+            <strong>Warning!</strong> You are about to delete the book:<br>
+            <strong>"{{ book.title }}"</strong> by {{ book.author.name }}
+        </div>
+        
+        <p>This action cannot be undone. Are you sure you want to proceed?</p>
+        
+        <form method="post" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        </form>
+        <a href="{% url 'relationship_app:list_books' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{% extends "bookshelf/base.html" %}
+
+{% block title %}{% if title %}{{ title }}{% else %}Form{% endif %} - Library Management System{% endblock %}
+
+{% block content %}
+<h1>{% if title %}{{ title }}{% else %}Form{% endif %}</h1>
+
+<!-- Security: CSRF Token for all forms -->
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}  <!-- CSRF Protection -->
+    
+    <div class="form-group">
+        {{ form.as_p }}
+    </div>
+    
+    <!-- Security: Submit button with proper type -->
+    <button type="submit" class="btn btn-primary">
+        {% if action %}{{ action }}{% else %}Submit{% endif %}
+    </button>
+    
+    <!-- Security: Cancel link with proper URL -->
+    <a href="{% url 'bookshelf:book_list' %}" class="btn btn-secondary">Cancel</a>
+</form>
+
+<!-- Security: Navigation -->
+<div style="margin-top: 20px;">
+    <a href="{% url 'bookshelf:book_list' %}">← Back to Book List</a>
+</div>
+{% endblock %}

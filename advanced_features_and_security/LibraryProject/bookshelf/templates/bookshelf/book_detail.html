@@ -1,0 +1,24 @@
+{% extends "bookshelf/base.html" %}
+
+{% block title %}{{ book.title }} - Library Management System{% endblock %}
+
+{% block content %}
+<h1>{{ book.title|escape }}</h1>
+
+<div style="margin: 20px 0;">
+    <p><strong>Author:</strong> {{ book.author.name|escape }}</p>
+    <p><strong>Title:</strong> {{ book.title|escape }}</p>
+</div>
+
+<div>
+    <a href="{% url 'bookshelf:book_list' %}" class="btn btn-secondary">Back to List</a>
+    
+    {% if perms.bookshelf.can_edit %}
+    <a href="{% url 'bookshelf:book_edit' book.id %}" class="btn btn-primary">Edit</a>
+    {% endif %}
+    
+    {% if perms.bookshelf.can_delete %}
+    <a href="{% url 'bookshelf:book_delete' book.id %}" class="btn btn-danger">Delete</a>
+    {% endif %}
+</div>
+{% endblock %}
