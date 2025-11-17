@@ -1,3 +1,4 @@
+# relationship_app/models.py - UPDATED
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager, Permission
 from django.utils.translation import gettext_lazy as _
@@ -21,7 +22,7 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         
         # Create user profile
-        UserProfile.objects.create(user=user)
+        UserProfile.objects.get_or_create(user=user)
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
@@ -110,18 +111,16 @@ class UserProfile(models.Model):
         return f"{self.user.email} - {self.role}"
 
 @receiver(post_save, sender=CustomUser)
-def create_user_profile(sender, instance, created, **kwargs):
-    """Create user profile when a new user is created"""
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    """
+    Create or update user profile when a CustomUser is saved.
+    """
     if created:
-        UserProfile.objects.get_or_create(user=instance)
-
-@receiver(post_save, sender=CustomUser)
-def save_user_profile(sender, instance, **kwargs):
-    """Save user profile when user is saved"""
-    if hasattr(instance, 'profile'):
-        instance.profile.save()
+        UserProfile.objects.create(user=instance)
     else:
+        # Ensure profile exists for existing users
         UserProfile.objects.get_or_create(user=instance)
+        instance.profile.save()
 
 class Author(models.Model):
     name = models.CharField(max_length=100)
@@ -187,35 +186,5 @@ class Librarian(models.Model):
     def __str__(self):
         return f"{self.name} - {self.library.name}"
 
-# Signal to set up default permissions and groups
-@receiver(post_save, sender=ContentType)
-def setup_default_permissions(sender, instance, **kwargs):
-    """Create default groups and permissions if they don't exist"""
-    if instance.app_label == 'relationship_app':
-        # Create default groups
-        admin_group, created = Group.objects.get_or_create(name='Admins')
-        librarian_group, created = Group.objects.get_or_create(name='Librarians') 
-        member_group, created = Group.objects.get_or_create(name='Members')
-        
-        # Get all permissions for this app
-        permissions = Permission.objects.filter(content_type=instance)
-        
-        # Assign permissions to groups
-        if instance.model == 'customuser':
-            # Admins get all permissions
-            for perm in permissions:
-                admin_group.permissions.add(perm)
-            
-            # Librarians get specific permissions
-            librarian_perms = permissions.filter(
-                codename__in=['can_view', 'can_add_book', 'can_create', 'can_edit', 'can_view_library']
-            )
-            for perm in librarian_perms:
-                librarian_group.permissions.add(perm)
-            
-            # Members get basic permissions
-            member_perms = permissions.filter(
-                codename__in=['can_view', 'can_view_library']
-            )
-            for perm in member_perms:
-                member_group.permissions.add(perm)
+# FIXED: Remove problematic signal and replace with management command
+# The setup_default_permissions signal was causing issues, so we'll handle this differently

@@ -7,11 +7,18 @@
 
 <div style="margin: 20px 0;">
     <p><strong>Author:</strong> {{ book.author.name|escape }}</p>
-    <p><strong>Title:</strong> {{ book.title|escape }}</p>
+    
+    {% if book.publication_year %}
+    <p><strong>Publication Year:</strong> {{ book.publication_year }}</p>
+    {% endif %}
+    
+    {% if book.description %}
+    <p><strong>Description:</strong> {{ book.description|escape }}</p>
+    {% endif %}
 </div>
 
-<div>
-    <a href="{% url 'bookshelf:book_list' %}" class="btn btn-secondary">Back to List</a>
+<div style="margin-top: 20px;">
+    <a href="{% url 'bookshelf:book_list' %}" class="btn btn-secondary">Back to Book List</a>
     
     {% if perms.bookshelf.can_edit %}
     <a href="{% url 'bookshelf:book_edit' book.id %}" class="btn btn-primary">Edit</a>

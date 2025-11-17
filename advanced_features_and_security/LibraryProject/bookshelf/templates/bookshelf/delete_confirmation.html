@@ -1,25 +1,27 @@
 {% extends "bookshelf/base.html" %}
 
-{% block title %}Delete Confirmation - Library Management System{% endblock %}
+{% block title %}Delete {{ object_type|title }} - Library Management System{% endblock %}
 
 {% block content %}
-<h1>Delete Confirmation</h1>
+<h1>Delete {{ object_type }}</h1>
 
-<!-- Security: Confirm destructive actions -->
-<div class="alert alert-error">
-    <h3>Warning: This action cannot be undone!</h3>
-    <p>Are you sure you want to delete "{{ object_type }}: <strong>{{ book.title|escape }}</strong>"?</p>
+<div style="margin: 20px 0; padding: 20px; border: 1px solid #dc3545; border-radius: 5px;">
+    <p><strong>Warning:</strong> You are about to delete this {{ object_type }}. This action cannot be undone.</p>
+    
+    {% if book %}
+    <p><strong>Book:</strong> {{ book.title|escape }}</p>
+    <p><strong>Author:</strong> {{ book.author.name|escape }}</p>
+    {% endif %}
+    
+    {% if library %}
+    <p><strong>Library:</strong> {{ library.name|escape }}</p>
+    {% endif %}
 </div>
 
-<!-- Security: CSRF protected deletion form -->
+<!-- Security: CSRF Token for all forms -->
 <form method="post">
     {% csrf_token %}
-    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+    <button type="submit" class="btn btn-danger">Confirm Delete</button>
     <a href="{% url 'bookshelf:book_list' %}" class="btn btn-secondary">Cancel</a>
 </form>
-
-<!-- Security: Navigation -->
-<div style="margin-top: 20px;">
-    <a href="{% url 'bookshelf:book_list' %}">← Back to Book List</a>
-</div>
 {% endblock %}

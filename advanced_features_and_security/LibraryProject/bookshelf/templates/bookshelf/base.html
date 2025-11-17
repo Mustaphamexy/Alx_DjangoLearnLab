@@ -4,78 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Library Management System{% endblock %}</title>
-    
-    <!-- Security: No inline styles or scripts - keep them minimal and safe -->
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .messages {
-            margin: 10px 0;
-        }
-        .alert {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
-        }
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .btn { 
+            padding: 8px 16px; 
+            margin: 5px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            text-decoration: none; 
             display: inline-block;
         }
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
-        .btn-danger {
-            background-color: #dc3545;
-            color: white;
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .messages { margin: 20px 0; }
+        .alert { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .alert-success { background-color: #d4edda; color: #155724; }
+        .alert-error { background-color: #f8d7da; color: #721c24; }
+        .alert-info { background-color: #d1ecf1; color: #0c5460; }
+        .form-control { 
+            width: 100%; 
+            padding: 8px; 
+            margin: 5px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Security: User authentication info -->
-        {% if user.is_authenticated %}
-        <div style="text-align: right; margin-bottom: 20px;">
-            Welcome, {{ user.email }} | 
-            <a href="{% url 'relationship_app:profile' %}">Profile</a> |
-            <a href="{% url 'relationship_app:logout' %}">Logout</a>
-        </div>
-        {% endif %}
-        
-        <!-- Security: Display messages safely -->
+    <header>
+        <h1>Library Management System</h1>
+        <nav>
+            <a href="{% url 'bookshelf:book_list' %}">Books</a> |
+            <a href="{% url 'bookshelf:example_form' %}">Example Form</a> |
+            <a href="{% url 'relationship_app:home' %}">Main App</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Display messages -->
         {% if messages %}
         <div class="messages">
             {% for message in messages %}
@@ -85,26 +53,13 @@
             {% endfor %}
         </div>
         {% endif %}
-        
-        <!-- Main content -->
+
         {% block content %}
         {% endblock %}
-    </div>
-    
-    <!-- Security: Minimal safe JavaScript -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Safe DOM manipulation - no user input processing
-            console.log('Page loaded securely');
-            
-            // Auto-hide messages after 5 seconds
-            setTimeout(function() {
-                var messages = document.querySelectorAll('.alert');
-                messages.forEach(function(message) {
-                    message.style.display = 'none';
-                });
-            }, 5000);
-        });
-    </script>
+    </main>
+
+    <footer style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd;">
+        <p>&copy; 2024 Library Management System. All rights reserved.</p>
+    </footer>
 </body>
 </html>

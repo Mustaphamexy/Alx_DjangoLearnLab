@@ -1,10 +1,11 @@
+# bookshelf/forms.py - UPDATED
 from django import forms
 from .models import Book, Author
 
 class BookForm(forms.ModelForm):
     class Meta:
         model = Book
-        fields = ['title', 'author', 'publication_year']  # Add publication_year
+        fields = ['title', 'author', 'publication_year']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control', 
@@ -25,3 +26,27 @@ class BookForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['author'].queryset = Author.objects.all().order_by('name')
+
+# ADD THIS FORM
+class ExampleForm(forms.Form):
+    """Example form for demonstration purposes"""
+    name = forms.CharField(
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your name'
+        })
+    )
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your email'
+        })
+    )
+    message = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your message',
+            'rows': 4
+        })
+    )
