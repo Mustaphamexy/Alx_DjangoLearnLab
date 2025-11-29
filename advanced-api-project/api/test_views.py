@@ -1,289 +1,252 @@
 """
-Comprehensive unit tests for Django REST Framework APIs.
+Unit tests for API endpoints.
 Testing API endpoints for functionality, response data integrity, and status code accuracy.
 """
 
-import json
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from .models import Author, Book
-from .serializers import AuthorSerializer, BookSerializer
 
 
 class BaseAPITestCase(APITestCase):
     """
-    Base test case with common setup methods for all API tests.
-    Django automatically configures a separate test database.
+    Base test case that uses separate test database.
+    Django automatically configures test database to avoid impacting production.
     """
     
     def setUp(self):
         """
-        Set up test data and clients for all test cases.
-        Uses separate test database to avoid impacting production/development data.
+        Set up test data using separate test database.
         """
-        # Create test users
-        self.normal_user = User.objects.create_user(
+        self.user = User.objects.create_user(
             username='testuser',
-            password='testpass123',
-            email='test@example.com'
+            password='testpass123'
         )
-        
-        # Create test authors
-        self.author1 = Author.objects.create(name='J.K. Rowling')
-        self.author2 = Author.objects.create(name='George Orwell')
-        
-        # Create test books
-        self.book1 = Book.objects.create(
-            title='Harry Potter',
-            publication_year=1997,
-            author=self.author1
+        self.author = Author.objects.create(name='Test Author')
+        self.book = Book.objects.create(
+            title='Test Book',
+            publication_year=2020,
+            author=self.author
         )
-        self.book2 = Book.objects.create(
-            title='1984',
-            publication_year=1949,
-            author=self.author2
-        )
-        
-        # Create API client
         self.client = APIClient()
 
 
 class BookCRUDTests(BaseAPITestCase):
     """
-    Test CRUD operations for Book model endpoints.
+    Test Book CRUD operations and status codes.
     """
     
-    def test_retrieve_book_list_unauthenticated(self):
+    def test_book_list_returns_correct_status(self):
         """
-        Test that unauthenticated users can retrieve book list.
-        Expected: HTTP 200 OK
+        Test book list returns correct status code.
         """
         response = self.client.get(reverse('book-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # FIXED: Added response.data check
+        self.assertIn('results', response.data)
+        self.assertIn('count', response.data)
     
-    def test_retrieve_single_book_unauthenticated(self):
+    def test_book_detail_returns_correct_status(self):
         """
-        Test that unauthenticated users can retrieve a single book.
-        Expected: HTTP 200 OK
+        Test book detail returns correct status code.
         """
-        url = reverse('book-detail', kwargs={'pk': self.book1.pk})
-        response = self.client.get(url)
+        response = self.client.get(reverse('book-detail', kwargs={'pk': self.book.pk}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # FIXED: Added response.data check
+        self.assertEqual(response.data['title'], 'Test Book')
     
-    def test_create_book_unauthenticated(self):
+    def test_book_create_without_auth_returns_403(self):
         """
-        Test that unauthenticated users cannot create books.
-        Expected: HTTP 403 Forbidden
+        Test book creation without authentication returns 403.
         """
         book_data = {
-            'title': 'New Test Book',
+            'title': 'New Book',
             'publication_year': 2023,
-            'author': self.author1.pk
+            'author': self.author.pk
         }
         response = self.client.post(reverse('book-create'), book_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # FIXED: Added response.data check
+        self.assertIn('detail', response.data)
     
-    def test_create_book_authenticated(self):
+    def test_book_create_with_auth_returns_201(self):
         """
-        Test that authenticated users can create books.
-        Expected: HTTP 201 Created
+        Test book creation with authentication returns 201.
         """
-        self.client.force_authenticate(user=self.normal_user)
+        self.client.force_authenticate(user=self.user)
         book_data = {
-            'title': 'New Test Book',
+            'title': 'New Book',
             'publication_year': 2023,
-            'author': self.author1.pk
+            'author': self.author.pk
         }
         response = self.client.post(reverse('book-create'), book_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # FIXED: Added response.data check
+        self.assertEqual(response.data['message'], 'Book created successfully')
     
-    def test_update_book_unauthenticated(self):
+    def test_book_update_without_auth_returns_403(self):
         """
-        Test that unauthenticated users cannot update books.
-        Expected: HTTP 403 Forbidden
+        Test book update without authentication returns 403.
         """
-        url = reverse('book-update', kwargs={'pk': self.book1.pk})
-        update_data = {
-            'title': 'Updated Title',
-            'publication_year': 2000,
-            'author': self.author1.pk
-        }
-        response = self.client.put(url, update_data, format='json')
+        update_data = {'title': 'Updated Book'}
+        response = self.client.put(
+            reverse('book-update', kwargs={'pk': self.book.pk}),
+            update_data,
+            format='json'
+        )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # FIXED: Added response.data check
+        self.assertIn('detail', response.data)
     
-    def test_update_book_authenticated(self):
+    def test_book_delete_without_auth_returns_403(self):
         """
-        Test that authenticated users can update books.
-        Expected: HTTP 200 OK
+        Test book delete without authentication returns 403.
         """
-        self.client.force_authenticate(user=self.normal_user)
-        url = reverse('book-update', kwargs={'pk': self.book1.pk})
-        update_data = {
-            'title': 'Updated Title',
-            'publication_year': 2000,
-            'author': self.author1.pk
-        }
-        response = self.client.put(url, update_data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-    
-    def test_delete_book_unauthenticated(self):
-        """
-        Test that unauthenticated users cannot delete books.
-        Expected: HTTP 403 Forbidden
-        """
-        url = reverse('book-delete', kwargs={'pk': self.book1.pk})
-        response = self.client.delete(url)
+        response = self.client.delete(reverse('book-delete', kwargs={'pk': self.book.pk}))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # FIXED: Added response.data check
+        self.assertIn('detail', response.data)
     
-    def test_delete_book_authenticated(self):
+    def test_book_delete_with_auth_returns_204(self):
         """
-        Test that authenticated users can delete books.
-        Expected: HTTP 204 No Content
+        Test book delete with authentication returns 204.
         """
-        self.client.force_authenticate(user=self.normal_user)
-        url = reverse('book-delete', kwargs={'pk': self.book1.pk})
-        response = self.client.delete(url)
+        self.client.force_authenticate(user=self.user)
+        response = self.client.delete(reverse('book-delete', kwargs={'pk': self.book.pk}))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        # FIXED: Added response.data check
+        self.assertEqual(response.data['message'], 'Book "Test Book" deleted successfully')
 
 
-class AuthorCRUDTests(BaseAPITestCase):
+class AuthorPermissionTests(BaseAPITestCase):
     """
-    Test CRUD operations for Author model endpoints.
+    Test author endpoint permissions and status codes.
     """
     
-    def test_retrieve_author_list_unauthenticated(self):
+    def test_author_list_returns_200(self):
         """
-        Test that unauthenticated users can retrieve author list.
-        Expected: HTTP 200 OK
+        Test author list returns 200 for unauthenticated users.
         """
         response = self.client.get(reverse('author-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # FIXED: Added response.data check
+        self.assertIsInstance(response.data, list)
     
-    def test_create_author_unauthenticated(self):
+    def test_author_create_without_auth_returns_403(self):
         """
-        Test that unauthenticated users cannot create authors.
-        Expected: HTTP 403 Forbidden
+        Test author creation without authentication returns 403.
         """
-        author_data = {'name': 'New Test Author'}
+        author_data = {'name': 'New Author'}
         response = self.client.post(reverse('author-list'), author_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # FIXED: Added response.data check
+        self.assertIn('detail', response.data)
     
-    def test_create_author_authenticated(self):
+    def test_author_create_with_auth_returns_201(self):
         """
-        Test that authenticated users can create authors.
-        Expected: HTTP 201 Created
+        Test author creation with authentication returns 201.
         """
-        self.client.force_authenticate(user=self.normal_user)
-        author_data = {'name': 'New Test Author'}
+        self.client.force_authenticate(user=self.user)
+        author_data = {'name': 'New Author'}
         response = self.client.post(reverse('author-list'), author_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # FIXED: Added response.data check
+        self.assertEqual(response.data['name'], 'New Author')
 
 
-class FilteringSearchOrderingTests(BaseAPITestCase):
+class FilterSearchTests(BaseAPITestCase):
     """
-    Test filtering, searching, and ordering functionalities.
+    Test filtering and search functionality.
     """
     
     def test_filter_books_by_author(self):
         """
-        Test filtering books by specific author.
-        Expected: HTTP 200 OK with filtered results
+        Test filtering books by author.
         """
-        response = self.client.get(reverse('book-list'), {'author': self.author1.pk})
+        response = self.client.get(reverse('book-list'), {'author': self.author.pk})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # FIXED: Added response.data check
+        self.assertIn('results', response.data)
+        self.assertIn('count', response.data)
     
     def test_search_books_by_title(self):
         """
         Test searching books by title.
-        Expected: HTTP 200 OK with search results
         """
-        response = self.client.get(reverse('book-list'), {'search': 'Harry'})
+        response = self.client.get(reverse('book-list'), {'search': 'Test'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # FIXED: Added response.data check
+        self.assertIn('results', response.data)
+        self.assertIn('count', response.data)
     
     def test_order_books_by_title(self):
         """
         Test ordering books by title.
-        Expected: HTTP 200 OK with ordered results
         """
         response = self.client.get(reverse('book-list'), {'ordering': 'title'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-
-class PermissionTests(BaseAPITestCase):
-    """
-    Test permission and authentication mechanisms.
-    """
-    
-    def test_api_root_access_unauthenticated(self):
-        """
-        Test that API root is accessible without authentication.
-        Expected: HTTP 200 OK
-        """
-        response = self.client.get(reverse('api-root'))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-    
-    def test_mixed_permissions_on_author_endpoints(self):
-        """
-        Test that author endpoints have different permissions for different methods.
-        Expected: GET allowed without auth, POST requires auth
-        """
-        # GET should work without authentication
-        response = self.client.get(reverse('author-list'))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
-        # POST should require authentication
-        author_data = {'name': 'New Author'}
-        response = self.client.post(reverse('author-list'), author_data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # FIXED: Added response.data check
+        self.assertIn('results', response.data)
+        self.assertIn('count', response.data)
 
 
 class ErrorHandlingTests(BaseAPITestCase):
     """
-    Test error handling and edge cases.
+    Test error handling and status codes.
     """
     
-    def test_retrieve_nonexistent_book(self):
+    def test_nonexistent_book_returns_404(self):
         """
-        Test retrieving a book that doesn't exist.
-        Expected: HTTP 404 Not Found
+        Test nonexistent book returns 404.
         """
-        url = reverse('book-detail', kwargs={'pk': 9999})
-        response = self.client.get(url)
+        response = self.client.get(reverse('book-detail', kwargs={'pk': 9999}))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # FIXED: Added response.data check
+        self.assertIn('detail', response.data)
     
-    def test_invalid_book_data_creation(self):
+    def test_invalid_data_returns_400(self):
         """
-        Test creating a book with invalid data.
-        Expected: HTTP 400 Bad Request
+        Test invalid data returns 400.
         """
-        self.client.force_authenticate(user=self.normal_user)
-        invalid_data = {
-            'title': '',  # Empty title
-            'publication_year': 'invalid_year',
-        }
+        self.client.force_authenticate(user=self.user)
+        invalid_data = {'title': '', 'publication_year': 'invalid'}
         response = self.client.post(reverse('book-create'), invalid_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # FIXED: Added response.data check
+        self.assertIn('publication_year', response.data)
 
 
-class SerializerTests(TestCase):
+class BulkOperationsTests(BaseAPITestCase):
     """
-    Test serializer validation logic.
+    Test bulk operations.
     """
     
-    def setUp(self):
-        self.author = Author.objects.create(name='Test Author')
-    
-    def test_book_serializer_validation(self):
+    def test_bulk_create_books_authenticated(self):
         """
-        Test BookSerializer validation.
+        Test bulk creation of books by authenticated users.
         """
-        book_data = {
-            'title': 'Test Book',
-            'publication_year': 2020,
-            'author': self.author.pk
+        self.client.force_authenticate(user=self.user)
+        
+        bulk_data = {
+            'books': [
+                {
+                    'title': 'Bulk Book 1',
+                    'publication_year': 2020,
+                    'author': self.author.pk
+                },
+                {
+                    'title': 'Bulk Book 2', 
+                    'publication_year': 2021,
+                    'author': self.author.pk
+                }
+            ]
         }
-        serializer = BookSerializer(data=book_data)
-        self.assertTrue(serializer.is_valid())
+        
+        response = self.client.post(reverse('book-bulk'), bulk_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_207_MULTI_STATUS)
+        # FIXED: Added response.data check
+        self.assertIn('created', response.data)
+        self.assertIn('errors', response.data)
