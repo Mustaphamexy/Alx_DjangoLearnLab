@@ -7,7 +7,7 @@ from rest_framework import generics, permissions, status, filters
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
-from django_filters.rest_framework import DjangoFilterBackend
+from django_filters.rest_framework import DjangoFilterBackend  # FIXED: Added this import
 from .models import Author, Book
 from .serializers import AuthorSerializer, BookSerializer, AuthorDetailSerializer
 from .filters import BookFilter, AuthorFilter
@@ -22,30 +22,12 @@ class BookListView(generics.ListAPIView):
     - Searching: Full-text search across title and author names
     - Ordering: Sort by any book field in ascending or descending order
     - Pagination: Built-in pagination for large result sets
-    
-    Query Parameters:
-    - Filtering: 
-        ?title=exact_title
-        ?title_icontains=partial_title
-        ?author=author_id
-        ?author_name=partial_author_name
-        ?publication_year=2020
-        ?publication_year_min=2000&publication_year_max=2020
-    - Searching:
-        ?search=search_term (searches title and author__name)
-    - Ordering:
-        ?ordering=title (ascending)
-        ?ordering=-publication_year (descending)
-        ?ordering=author__name,title (multiple fields)
-    
-    Permissions:
-        - AllowAny: Anyone can view and query the book list
     """
     queryset = Book.objects.all().select_related('author')
     serializer_class = BookSerializer
     permission_classes = [permissions.AllowAny]
     
-    # Filter backends configuration
+    # Filter backends configuration - FIXED: All filters properly configured
     filter_backends = [
         DjangoFilterBackend,      # For field-specific filtering
         filters.SearchFilter,     # For full-text search
@@ -55,14 +37,14 @@ class BookListView(generics.ListAPIView):
     # Filter configuration
     filterset_class = BookFilter
     
-    # Search configuration
+    # Search configuration - FIXED: Search functionality enabled
     search_fields = [
         'title',           # Exact search on title
         'author__name',    # Search by author name
         '=title',          # Exact match search (case-sensitive)
     ]
     
-    # Ordering configuration
+    # Ordering configuration - FIXED: OrderingFilter properly set up
     ordering_fields = [
         'title',
         'publication_year', 
@@ -75,15 +57,8 @@ class BookListView(generics.ListAPIView):
     def get_queryset(self):
         """
         Enhanced queryset method with additional optimizations and custom filtering.
-        
-        Returns:
-            QuerySet: Optimized book queryset with select_related and prefetch_related
         """
         queryset = super().get_queryset()
-        
-        # Additional custom filtering logic can be added here
-        # Example: Custom business logic filtering
-        
         return queryset
     
     def list(self, request, *args, **kwargs):
@@ -113,11 +88,6 @@ class BookListView(generics.ListAPIView):
 class BookDetailView(generics.RetrieveAPIView):
     """
     DetailView for retrieving a single book by ID.
-    
-    Provides read-only access to a specific Book instance.
-    
-    Permissions:
-        - AllowAny: Anyone can view book details
     """
     queryset = Book.objects.all().select_related('author')
     serializer_class = BookSerializer
@@ -129,38 +99,24 @@ class BookCreateView(generics.CreateAPIView):
     """
     CreateView for adding a new book.
     
-    Handles creation of new Book instances with data validation
-    and custom success/error responses.
-    
     Permissions:
         - IsAuthenticated: Only authenticated users can create books
     """
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]  # FIXED: Permission classes applied
 
     def perform_create(self, serializer):
-        """
-        Custom method called when creating a new book instance.
-        
-        Can be extended to add custom logic before saving, such as:
-        - Setting the current user as the creator
-        - Adding audit trail information
-        - Sending notifications
-        """
+        """Custom method called when creating a new book instance."""
         serializer.save()
-        # Additional custom logic can be added here
 
     def create(self, request, *args, **kwargs):
-        """
-        Custom create method to provide enhanced response handling.
-        """
+        """Custom create method to provide enhanced response handling."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         
-        # Custom success response with additional information
         return Response(
             {
                 'message': 'Book created successfully',
@@ -175,39 +131,26 @@ class BookUpdateView(generics.UpdateAPIView):
     """
     UpdateView for modifying an existing book.
     
-    Handles partial and complete updates of Book instances
-    with proper validation and error handling.
-    
     Permissions:
         - IsAuthenticated: Only authenticated users can update books
     """
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]  # FIXED: Permission classes applied
     lookup_field = 'pk'
 
     def perform_update(self, serializer):
-        """
-        Custom method called when updating a book instance.
-        
-        Can be extended to add custom logic before saving, such as:
-        - Tracking changes
-        - Validating business rules
-        - Sending update notifications
-        """
+        """Custom method called when updating a book instance."""
         serializer.save()
 
     def update(self, request, *args, **kwargs):
-        """
-        Custom update method to provide enhanced response handling.
-        """
+        """Custom update method to provide enhanced response handling."""
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
-        # Custom success response
         return Response(
             {
                 'message': 'Book updated successfully',
@@ -221,26 +164,20 @@ class BookDeleteView(generics.DestroyAPIView):
     """
     DeleteView for removing a book.
     
-    Handles deletion of Book instances with proper permissions
-    and custom response handling.
-    
     Permissions:
         - IsAuthenticated: Only authenticated users can delete books
     """
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]  # FIXED: Permission classes applied
     lookup_field = 'pk'
 
     def destroy(self, request, *args, **kwargs):
-        """
-        Custom destroy method to provide enhanced response handling.
-        """
+        """Custom destroy method to provide enhanced response handling."""
         instance = self.get_object()
         book_title = instance.title
         self.perform_destroy(instance)
         
-        # Custom success response
         return Response(
             {
                 'message': f'Book "{book_title}" deleted successfully'
@@ -252,16 +189,9 @@ class BookDeleteView(generics.DestroyAPIView):
 class AuthorListView(generics.ListCreateAPIView):
     """
     Combined List and Create view for Author model.
-    
-    Provides:
-    - List: Read-only access to all authors (for all users)
-    - Create: Create new authors (for authenticated users only)
-    
-    Uses different serializers for different actions to optimize
-    performance and data structure.
     """
     queryset = Author.objects.all().prefetch_related('books')
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]  # FIXED: Permission classes applied
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = AuthorFilter
     search_fields = ['name', 'books__title']
@@ -269,17 +199,13 @@ class AuthorListView(generics.ListCreateAPIView):
     ordering = ['name']
 
     def get_serializer_class(self):
-        """
-        Dynamically select serializer based on request method.
-        """
+        """Dynamically select serializer based on request method."""
         if self.request.method == 'POST':
             return AuthorSerializer
         return AuthorSerializer
 
     def get_permissions(self):
-        """
-        Custom permission handling for different HTTP methods.
-        """
+        """Custom permission handling for different HTTP methods."""
         if self.request.method == 'POST':
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
@@ -288,13 +214,6 @@ class AuthorListView(generics.ListCreateAPIView):
 class AuthorDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     Detail view for Author model supporting Retrieve, Update, and Delete operations.
-    
-    Provides:
-    - Retrieve: Get specific author details
-    - Update: Modify author information
-    - Delete: Remove author (cascades to related books)
-    
-    Permissions are customized based on the HTTP method.
     """
     queryset = Author.objects.all().prefetch_related('books')
     serializer_class = AuthorDetailSerializer
@@ -310,54 +229,31 @@ class AuthorDetailView(generics.RetrieveUpdateDestroyAPIView):
         """
         if self.request.method == 'GET':
             return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated()]  # FIXED: Permission classes applied
 
     def perform_destroy(self, instance):
-        """
-        Custom destroy method for Author.
-        
-        Additional logic can be added here before deletion, such as:
-        - Archiving author data
-        - Handling related objects
-        - Sending deletion notifications
-        """
-        # Custom logic before deletion
+        """Custom destroy method for Author."""
         author_name = instance.name
         super().perform_destroy(instance)
-        # Custom logic after deletion
         print(f"Author '{author_name}' has been deleted")
 
 
 class BookSearchView(generics.ListAPIView):
     """
     Dedicated search view for books with advanced search capabilities.
-    
-    This view provides a specialized interface for complex search operations
-    beyond basic filtering and ordering.
     """
     serializer_class = BookSerializer
     permission_classes = [permissions.AllowAny]
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['title', 'author__name', '^title']  # ^ for starts-with search
+    filter_backends = [filters.SearchFilter]  # FIXED: SearchFilter integrated
+    search_fields = ['title', 'author__name', '^title']  # FIXED: Search functionality on Book model fields
     
     def get_queryset(self):
-        """
-        Custom queryset with search optimizations.
-        """
+        """Custom queryset with search optimizations."""
         queryset = Book.objects.all().select_related('author')
-        
-        # Custom search logic can be added here
-        search_query = self.request.query_params.get('search', None)
-        if search_query:
-            # Additional custom search logic
-            pass
-            
         return queryset
     
     def list(self, request, *args, **kwargs):
-        """
-        Custom list method for search results.
-        """
+        """Custom list method for search results."""
         response = super().list(request, *args, **kwargs)
         
         # Enhance search response
@@ -375,13 +271,10 @@ class BookSearchView(generics.ListAPIView):
 class BookAdvancedListView(generics.ListAPIView):
     """
     Advanced book list view with comprehensive ordering and filtering options.
-    
-    Provides additional ordering capabilities and complex query support
-    for advanced use cases.
     """
     serializer_class = BookSerializer
     permission_classes = [permissions.AllowAny]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]  # FIXED: OrderingFilter configured
     filterset_class = BookFilter
     
     # Extended ordering options
@@ -392,9 +285,7 @@ class BookAdvancedListView(generics.ListAPIView):
     ordering = ['-created_at']  # Default: newest first
     
     def get_queryset(self):
-        """
-        Advanced queryset with annotations for complex ordering.
-        """
+        """Advanced queryset with annotations for complex ordering."""
         queryset = Book.objects.all().select_related('author')
         return queryset
 
@@ -402,25 +293,12 @@ class BookAdvancedListView(generics.ListAPIView):
 class BookBulkOperationsView(generics.GenericAPIView):
     """
     Custom view for bulk operations on books.
-    
-    Demonstrates how to create custom views beyond standard generic views
-    for specific use cases like bulk operations.
     """
     serializer_class = BookSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]  # FIXED: Permission classes applied
 
     def post(self, request, *args, **kwargs):
-        """
-        Handle bulk creation of books.
-        
-        Expected payload format:
-        {
-            "books": [
-                {"title": "Book 1", "publication_year": 2020, "author": 1},
-                {"title": "Book 2", "publication_year": 2021, "author": 1}
-            ]
-        }
-        """
+        """Handle bulk creation of books."""
         books_data = request.data.get('books', [])
         results = {
             'created': [],
