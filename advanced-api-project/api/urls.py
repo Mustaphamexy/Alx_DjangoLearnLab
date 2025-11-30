@@ -16,7 +16,6 @@ urlpatterns = [
     path('books/<int:pk>/', views.BookDetailView.as_view(), name='book-detail'),
     path('books/<int:pk>/update/', views.BookUpdateView.as_view(), name='book-update'),
     path('books/<int:pk>/delete/', views.BookDeleteView.as_view(), name='book-delete'),
-    path('books/bulk/', views.BookBulkOperationsView.as_view(), name='book-bulk'),  # FIXED: Added bulk endpoint
     
     # Search and advanced endpoints
     path('books/search/', views.BookSearchView.as_view(), name='book-search'),
