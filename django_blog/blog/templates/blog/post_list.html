@@ -1,0 +1,202 @@
+{% extends 'blog/base.html' %}
+{% load static %}
+
+{% block title %}Blog Posts - Django Blog{% endblock %}
+
+{% block content %}
+<div class="posts-container">
+    <div class="posts-header">
+        <h1><i class="fas fa-blog"></i> Blog Posts</h1>
+        <p class="subtitle">Discover amazing content from our community</p>
+        
+        <div class="posts-actions">
+            <form method="GET" action="{% url 'search-posts' %}" class="search-form">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" 
+                           placeholder="Search posts..." value="{{ request.GET.q }}">
+                    <button type="submit" class="btn btn-search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+            
+            {% if user.is_authenticated %}
+                <a href="{% url 'post-create' %}" class="btn btn-create">
+                    <i class="fas fa-plus"></i> Create Post
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="posts-content">
+        <div class="posts-sidebar">
+            <div class="categories-card">
+                <h3><i class="fas fa-tags"></i> Categories</h3>
+                <ul class="categories-list">
+                    <li>
+                        <a href="{% url 'post-list' %}" class="{% if not request.GET.category %}active{% endif %}">
+                            All Posts <span class="badge">{{ total_posts }}</span>
+                        </a>
+                    </li>
+                    {% for category in categories %}
+                    <li>
+                        <a href="{% url 'category-posts' category.slug %}" 
+                           class="{% if request.GET.category == category.id|stringformat:'s' %}active{% endif %}">
+                            {{ category.name }} <span class="badge">{{ category.post_count }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="stats-card">
+                <h3><i class="fas fa-chart-bar"></i> Quick Stats</h3>
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-number">{{ total_posts }}</div>
+                        <div class="stat-label">Total Posts</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ categories.count }}</div>
+                        <div class="stat-label">Categories</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="posts-main">
+            {% if posts %}
+                <div class="posts-grid">
+                    {% for post in posts %}
+                        <div class="post-card">
+                            {% if post.featured_image %}
+                                <div class="post-image">
+                                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+                                    <div class="post-categories">
+                                        {% for category in post.categories.all|slice:":2" %}
+                                            <span class="category-badge">{{ category.name }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="post-content">
+                                <div class="post-meta">
+                                    <div class="author-info">
+                                        {% if post.author.profile.profile_picture %}
+                                            <img src="{{ post.author.profile.profile_picture.url }}" 
+                                                 alt="{{ post.author.username }}" 
+                                                 class="author-avatar">
+                                        {% else %}
+                                            <div class="author-avatar-default">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div class="author-details">
+                                            <span class="author-name">{{ post.author.get_full_name|default:post.author.username }}</span>
+                                            <span class="post-date">
+                                                <i class="far fa-calendar"></i> {{ post.published_date|date:"M d, Y" }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="post-stats">
+                                        <span class="stat">
+                                            <i class="far fa-eye"></i> {{ post.views }}
+                                        </span>
+                                        <span class="stat">
+                                            <i class="far fa-clock"></i> {{ post.reading_time }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <h3 class="post-title">
+                                    <a href="{% url 'post-detail' post.slug %}">{{ post.title }}</a>
+                                </h3>
+                                
+                                <p class="post-excerpt">{{ post.excerpt|truncatewords:30 }}</p>
+                                
+                                <div class="post-footer">
+                                    <a href="{% url 'post-detail' post.slug %}" class="btn btn-read">
+                                        Read More <i class="fas fa-arrow-right"></i>
+                                    </a>
+                                    {% if user == post.author %}
+                                        <div class="post-actions">
+                                            <a href="{% url 'post-update' post.slug %}" class="btn-edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'post-delete' post.slug %}" class="btn-delete">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if is_paginated %}
+                    <nav class="pagination">
+                        <ul class="pagination-list">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                                       class="page-link">
+                                        <i class="fas fa-angle-double-left"></i> First
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                                       class="page-link">
+                                        <i class="fas fa-angle-left"></i> Previous
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                                           class="page-link">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                                       class="page-link">
+                                        Next <i class="fas fa-angle-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" 
+                                       class="page-link">
+                                        Last <i class="fas fa-angle-double-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-search fa-3x"></i>
+                    <h3>No posts found</h3>
+                    <p>Try adjusting your search or filter to find what you're looking for.</p>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'post-create' %}" class="btn btn-create">
+                            <i class="fas fa-plus"></i> Create Your First Post
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

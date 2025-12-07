@@ -1,0 +1,196 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}Delete Comment - Django Blog{% endblock %}
+
+{% block content %}
+<div class="delete-confirmation">
+    <div class="confirmation-card">
+        <div class="confirmation-header">
+            <i class="fas fa-exclamation-triangle fa-3x"></i>
+            <h1>Delete Comment</h1>
+            <p class="subtitle">Are you sure you want to delete this comment?</p>
+        </div>
+        
+        <div class="comment-preview">
+            <div class="comment-author">
+                <div class="author-avatar">
+                    {% if comment.author.profile.profile_picture %}
+                        <img src="{{ comment.author.profile.profile_picture.url }}" 
+                             alt="{{ comment.author.username }}">
+                    {% else %}
+                        <div class="author-avatar-default">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="author-info">
+                    <h4>{{ comment.author.get_full_name|default:comment.author.username }}</h4>
+                    <span class="comment-date">
+                        <i class="far fa-clock"></i> {{ comment.created_date|timesince }} ago
+                    </span>
+                </div>
+            </div>
+            
+            <div class="comment-content">
+                {{ comment.content|linebreaks }}
+            </div>
+            
+            <div class="comment-meta">
+                <small>
+                    <i class="fas fa-file-alt"></i> On post: 
+                    <a href="{% url 'post-detail' comment.post.slug %}">{{ comment.post.title }}</a>
+                </small>
+            </div>
+        </div>
+        
+        <div class="warning-box">
+            <h4><i class="fas fa-exclamation-circle"></i> Warning</h4>
+            <p>This action cannot be undone. The comment will be permanently deleted.</p>
+        </div>
+        
+        <form method="POST">
+            {% csrf_token %}
+            <div class="confirmation-actions">
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Yes, Delete Comment
+                </button>
+                <a href="{% url 'post-detail' comment.post.slug %}#comments" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+        
+        <div class="confirmation-footer">
+            <p>
+                <i class="fas fa-info-circle"></i>
+                Only comment authors and post authors can delete comments.
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+.delete-confirmation {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.confirmation-card {
+    background: white;
+    border-radius: 15px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.confirmation-header i {
+    color: #ff6b6b;
+    margin-bottom: 20px;
+}
+
+.confirmation-header h1 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.confirmation-header .subtitle {
+    color: #666;
+    font-size: 18px;
+    margin-bottom: 30px;
+}
+
+.comment-preview {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 30px 0;
+    text-align: left;
+}
+
+.comment-author {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.comment-author h4 {
+    margin: 0;
+    color: #333;
+}
+
+.comment-date {
+    color: #888;
+    font-size: 14px;
+}
+
+.comment-content {
+    color: #444;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.comment-meta {
+    color: #666;
+    font-size: 14px;
+}
+
+.comment-meta a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.warning-box {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 30px 0;
+    text-align: left;
+}
+
+.warning-box h4 {
+    color: #856404;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.warning-box p {
+    color: #856404;
+    margin: 0;
+}
+
+.confirmation-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.confirmation-footer {
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: #666;
+}
+
+.confirmation-footer p {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+@media (max-width: 768px) {
+    .confirmation-actions {
+        flex-direction: column;
+    }
+    
+    .confirmation-actions .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

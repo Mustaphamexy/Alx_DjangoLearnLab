@@ -1,0 +1,321 @@
+{% extends 'blog/base.html' %}
+{% load static %}
+
+{% block title %}Posts tagged "{{ tag.name }}" - Django Blog{% endblock %}
+
+{% block content %}
+<div class="posts-container">
+    <div class="posts-header tag-header">
+        <div class="tag-badge-large">
+            <i class="fas fa-tag"></i> {{ tag.name }}
+            <span class="badge">{{ posts.paginator.count }}</span>
+        </div>
+        <p class="subtitle">Posts tagged with "{{ tag.name }}"</p>
+        
+        <div class="posts-actions">
+            <a href="{% url 'tag-cloud' %}" class="btn btn-secondary">
+                <i class="fas fa-tags"></i> Browse All Tags
+            </a>
+            <a href="{% url 'post-list' %}" class="btn btn-primary">
+                <i class="fas fa-blog"></i> All Posts
+            </a>
+        </div>
+    </div>
+    
+    <div class="posts-content">
+        <div class="posts-sidebar">
+            <div class="tags-card">
+                <h3><i class="fas fa-tags"></i> Popular Tags</h3>
+                <div class="tags-list">
+                    {% for popular_tag in popular_tags %}
+                        <a href="{% url 'tag-posts' popular_tag.slug %}" 
+                           class="tag {% if popular_tag.slug == tag.slug %}active{% endif %}">
+                            {{ popular_tag.name }}
+                            <span class="tag-count">{{ popular_tag.post_count }}</span>
+                        </a>
+                    {% endfor %}
+                </div>
+                <div class="view-all-tags">
+                    <a href="{% url 'tag-cloud' %}" class="btn btn-link">
+                        <i class="fas fa-cloud"></i> View Tag Cloud
+                    </a>
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h3><i class="fas fa-chart-bar"></i> Tag Stats</h3>
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-number">{{ posts.paginator.count }}</div>
+                        <div class="stat-label">Total Posts</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ popular_tags|length }}</div>
+                        <div class="stat-label">Popular Tags</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="posts-main">
+            {% if posts %}
+                <div class="posts-grid">
+                    {% for post in posts %}
+                        <div class="post-card">
+                            {% if post.featured_image %}
+                                <div class="post-image">
+                                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+                                    <div class="post-tags">
+                                        {% for tag in post.tags.all|slice:":2" %}
+                                            <a href="{% url 'tag-posts' tag.slug %}" class="tag-badge">
+                                                {{ tag.name }}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="post-content">
+                                <div class="post-meta">
+                                    <div class="author-info">
+                                        {% if post.author.profile.profile_picture %}
+                                            <img src="{{ post.author.profile.profile_picture.url }}" 
+                                                 alt="{{ post.author.username }}" 
+                                                 class="author-avatar">
+                                        {% else %}
+                                            <div class="author-avatar-default">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div class="author-details">
+                                            <span class="author-name">{{ post.author.get_full_name|default:post.author.username }}</span>
+                                            <span class="post-date">
+                                                <i class="far fa-calendar"></i> {{ post.published_date|date:"M d, Y" }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="post-stats">
+                                        <span class="stat">
+                                            <i class="far fa-eye"></i> {{ post.views }}
+                                        </span>
+                                        <span class="stat">
+                                            <i class="far fa-clock"></i> {{ post.reading_time }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <h3 class="post-title">
+                                    <a href="{% url 'post-detail' post.slug %}">{{ post.title }}</a>
+                                </h3>
+                                
+                                <p class="post-excerpt">{{ post.excerpt|truncatewords:30 }}</p>
+                                
+                                <div class="post-footer">
+                                    <a href="{% url 'post-detail' post.slug %}" class="btn btn-read">
+                                        Read More <i class="fas fa-arrow-right"></i>
+                                    </a>
+                                    {% if user == post.author %}
+                                        <div class="post-actions">
+                                            <a href="{% url 'post-update' post.slug %}" class="btn-edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'post-delete' post.slug %}" class="btn-delete">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if is_paginated %}
+                    <nav class="pagination">
+                        <ul class="pagination-list">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a href="?page=1" class="page-link">
+                                        <i class="fas fa-angle-double-left"></i> First
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a href="?page={{ page_obj.previous_page_number }}" class="page-link">
+                                        <i class="fas fa-angle-left"></i> Previous
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a href="?page={{ num }}" class="page-link">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a href="?page={{ page_obj.next_page_number }}" class="page-link">
+                                        Next <i class="fas fa-angle-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">
+                                        Last <i class="fas fa-angle-double-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-search fa-3x"></i>
+                    <h3>No posts found</h3>
+                    <p>No posts are tagged with "{{ tag.name }}" yet.</p>
+                    <div class="action-buttons">
+                        <a href="{% url 'post-list' %}" class="btn btn-primary">
+                            <i class="fas fa-blog"></i> Browse All Posts
+                        </a>
+                        <a href="{% url 'tag-cloud' %}" class="btn btn-secondary">
+                            <i class="fas fa-tags"></i> Browse All Tags
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.tag-header {
+    background: linear-gradient(135deg, #42b883 0%, #35495e 100%);
+    color: white;
+}
+
+.tag-badge-large {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.tag-badge-large .badge {
+    background: white;
+    color: #42b883;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 14px;
+}
+
+.tags-card {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.tags-card h3 {
+    color: #333;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.tags-list .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    background: #f8f9fa;
+    color: #667eea;
+    text-decoration: none;
+    border-radius: 15px;
+    font-size: 13px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s;
+}
+
+.tags-list .tag:hover,
+.tags-list .tag.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+    transform: translateY(-2px);
+}
+
+.tag-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: inherit;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+}
+
+.view-all-tags {
+    text-align: center;
+    padding-top: 15px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.btn-link {
+    color: #667eea;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.btn-link:hover {
+    text-decoration: underline;
+}
+
+.post-tags {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.tag-badge {
+    background: rgba(102, 126, 234, 0.9);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.tag-badge:hover {
+    background: rgba(102, 126, 234, 1);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+</style>
+{% endblock %}

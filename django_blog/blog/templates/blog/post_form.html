@@ -1,0 +1,156 @@
+{% extends 'blog/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Django Blog{% endblock %}
+
+{% block content %}
+<div class="post-form-container">
+    <div class="form-header">
+        <h1><i class="fas fa-edit"></i> {{ title }}</h1>
+        <p class="subtitle">Share your knowledge and insights with the community</p>
+    </div>
+    
+    <div class="post-form-content">
+        <form method="POST" enctype="multipart/form-data" class="post-form">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-error">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="form-section">
+                <h3><i class="fas fa-heading"></i> Post Information</h3>
+                
+                <div class="form-group">
+                    <label for="{{ form.title.id_for_label }}">
+                        <i class="fas fa-heading"></i> Title *
+                    </label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                        <div class="form-error">{{ form.title.errors }}</div>
+                    {% endif %}
+                    <small class="form-text">Write a clear and descriptive title (minimum 10 characters)</small>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.status.id_for_label }}">
+                            <i class="fas fa-globe"></i> Status
+                        </label>
+                        {{ form.status }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.featured_image.id_for_label }}">
+                            <i class="fas fa-image"></i> Featured Image
+                        </label>
+                        {{ form.featured_image }}
+                        {% if object and object.featured_image %}
+                            <div class="current-image">
+                                <p>Current image:</p>
+                                <img src="{{ object.featured_image.url }}" alt="Current featured image" width="100">
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3><i class="fas fa-align-left"></i> Content</h3>
+                
+                <div class="form-group">
+                    <label for="{{ form.excerpt.id_for_label }}">
+                        <i class="fas fa-quote-left"></i> Excerpt
+                    </label>
+                    {{ form.excerpt }}
+                    <small class="form-text">Brief summary of your post (optional, max 300 characters)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.content.id_for_label }}">
+                        <i class="fas fa-file-alt"></i> Content *
+                    </label>
+                    {{ form.content }}
+                    {% if form.content.errors %}
+                        <div class="form-error">{{ form.content.errors }}</div>
+                    {% endif %}
+                    <small class="form-text">Write your post content here. Minimum 50 characters required.</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.tags_input.id_for_label }}">
+                        <i class="fas fa-hashtag"></i> Tags
+                    </label>
+                    {{ form.tags_input }}
+                    <small class="form-text">{{ form.tags_input.help_text }}</small>
+                    {% if form.tags_input.errors %}
+                        <div class="form-error">{{ form.tags_input.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> {{ submit_text }}
+                    </button>
+                    <a href="{% if object %}{% url 'post-detail' object.slug %}{% else %}{% url 'post-list' %}{% endif %}" 
+                       class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                    {% if object %}
+                        <a href="{% url 'post-delete' object.slug %}" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Delete Post
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+        
+        <div class="form-sidebar">
+            <div class="sidebar-card">
+                <h4><i class="fas fa-lightbulb"></i> Writing Tips</h4>
+                <ul class="tips-list">
+                    <li>Use clear and concise language</li>
+                    <li>Break content into sections with headings</li>
+                    <li>Include images to enhance readability</li>
+                    <li>Proofread before publishing</li>
+                    <li>Use categories to help readers find your content</li>
+                </ul>
+            </div>
+            
+            <div class="sidebar-card">
+                <h4><i class="fas fa-tags"></i> Categories</h4>
+                <div class="categories-checkboxes">
+                    {{ form.categories }}
+                </div>
+            </div>
+            
+            <div class="sidebar-card">
+                <h4><i class="fas fa-hashtag"></i> Tagging Tips</h4>
+                <ul class="tags-guide">
+                    <li>Separate tags with commas (e.g., python, django, tutorial)</li>
+                    <li>Use 3-5 relevant tags per post</li>
+                    <li>Include both broad and specific tags</li>
+                    <li>Avoid using too many tags (max 10 recommended)</li>
+                    <li>Check existing tags to maintain consistency</li>
+                </ul>
+            </div>
+            
+            <div class="sidebar-card">
+                <h4><i class="fas fa-info-circle"></i> Status Guide</h4>
+                <ul class="status-guide">
+                    <li>
+                        <strong>Draft:</strong> Save for later editing. Not visible to public.
+                    </li>
+                    <li>
+                        <strong>Published:</strong> Make post visible to all readers.
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

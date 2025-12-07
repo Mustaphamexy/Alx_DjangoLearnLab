@@ -1,0 +1,108 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}Register - Django Blog{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h1><i class="fas fa-user-plus"></i> Register</h1>
+        <p class="auth-subtitle">Create your account to start blogging</p>
+        
+        <form method="POST" class="auth-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.username.id_for_label }}">
+                        <i class="fas fa-user"></i> Username *
+                    </label>
+                    {{ form.username }}
+                    <small class="form-text">{{ form.username.help_text }}</small>
+                    {% if form.username.errors %}
+                        <div class="form-error">
+                            {% for error in form.username.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.email.id_for_label }}">
+                        <i class="fas fa-envelope"></i> Email *
+                    </label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <div class="form-error">
+                            {% for error in form.email.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.first_name.id_for_label }}">
+                        <i class="fas fa-id-card"></i> First Name
+                    </label>
+                    {{ form.first_name }}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.last_name.id_for_label }}">
+                        <i class="fas fa-id-card"></i> Last Name
+                    </label>
+                    {{ form.last_name }}
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.password1.id_for_label }}">
+                        <i class="fas fa-lock"></i> Password *
+                    </label>
+                    {{ form.password1 }}
+                    <small class="form-text">{{ form.password1.help_text }}</small>
+                    {% if form.password1.errors %}
+                        <div class="form-error">
+                            {% for error in form.password1.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.password2.id_for_label }}">
+                        <i class="fas fa-lock"></i> Confirm Password *
+                    </label>
+                    {{ form.password2 }}
+                    <small class="form-text">{{ form.password2.help_text }}</small>
+                    {% if form.password2.errors %}
+                        <div class="form-error">
+                            {% for error in form.password2.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="btn btn-success btn-block">
+                    <i class="fas fa-user-plus"></i> Register
+                </button>
+            </div>
+            
+            <div class="auth-links">
+                <p>
+                    Already have an account? 
+                    <a href="{% url 'login' %}">Login here</a>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

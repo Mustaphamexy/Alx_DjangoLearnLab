@@ -1,0 +1,499 @@
+<!-- blog/templates/blog/home.html - UPDATED -->
+{% extends 'blog/base.html' %}
+{% load static %}
+
+{% block title %}Home - Django Blog{% endblock %}
+
+{% block content %}
+<div class="home-container">
+    <div class="hero-section">
+        <h1>Welcome to Django Blog</h1>
+        <p class="hero-subtitle">Share your thoughts, stories, and knowledge with the world</p>
+        
+        {% if not user.is_authenticated %}
+            <div class="hero-actions">
+                <a href="{% url 'register' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-user-plus"></i> Join Our Community
+                </a>
+                <a href="{% url 'post-list' %}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-blog"></i> Browse Posts
+                </a>
+            </div>
+        {% else %}
+            <div class="hero-actions">
+                <a href="{% url 'post-create' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus"></i> Create New Post
+                </a>
+                <a href="{% url 'user-posts' %}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-list"></i> My Posts
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="home-content">
+        <!-- Featured Posts -->
+        {% if featured_posts %}
+            <section class="featured-posts">
+                <h2><i class="fas fa-star"></i> Featured Posts</h2>
+                <div class="featured-grid">
+                    {% for post in featured_posts %}
+                        <div class="featured-post">
+                            {% if post.featured_image %}
+                                <div class="featured-image">
+                                    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+                                </div>
+                            {% endif %}
+                            <div class="featured-content">
+                                <h3>
+                                    <a href="{% url 'post-detail' post.slug %}">{{ post.title }}</a>
+                                </h3>
+                                <p class="post-meta">
+                                    By {{ post.author.username }} | {{ post.published_date|date:"F d, Y" }}
+                                </p>
+                                <p class="post-excerpt">{{ post.excerpt|truncatewords:20 }}</p>
+                                <a href="{% url 'post-detail' post.slug %}" class="btn-read">Read More</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+        
+        <!-- Recent Posts -->
+        <div class="home-grid">
+            <div class="recent-posts">
+                <h2><i class="fas fa-clock"></i> Recent Posts</h2>
+                {% if posts %}
+                    <div class="posts-list">
+                        {% for post in posts %}
+                            <div class="post-item">
+                                <div class="post-item-content">
+                                    <h3>
+                                        <a href="{% url 'post-detail' post.slug %}">{{ post.title }}</a>
+                                    </h3>
+                                    <p class="post-meta">
+                                        <i class="fas fa-user"></i> {{ post.author.username }} | 
+                                        <i class="far fa-calendar"></i> {{ post.published_date|date:"F d, Y" }}
+                                    </p>
+                                    <p>{{ post.excerpt|default:post.content|truncatewords:30 }}</p>
+                                    <a href="{% url 'post-detail' post.slug %}" class="read-more">Read full post →</a>
+                                </div>
+                            </div>
+                            {% if not forloop.last %}<hr>{% endif %}
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="view-all">
+                        <a href="{% url 'post-list' %}" class="btn btn-primary">
+                            <i class="fas fa-blog"></i> View All Posts
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-blog fa-3x"></i>
+                        <h3>No posts yet</h3>
+                        <p>Be the first to create a blog post!</p>
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'post-create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Create First Post
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="home-sidebar">
+                <!-- Categories -->
+                <div class="sidebar-card">
+                    <h3><i class="fas fa-tags"></i> Top Categories</h3>
+                    <ul class="categories-list">
+                        {% for category in categories %}
+                            <li>
+                                <a href="{% url 'category-posts' category.slug %}">
+                                    {{ category.name }}
+                                    <span class="badge">{{ category.post_count }}</span>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="sidebar-card">
+                    <h3><i class="fas fa-chart-bar"></i> Blog Stats</h3>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-number">{{ total_posts }}</div>
+                            <div class="stat-label">Total Posts</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">{{ categories|length }}</div>
+                            <div class="stat-label">Categories</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">{{ users }}</div>
+                            <div class="stat-label">Authors</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Call to Action -->
+                {% if not user.is_authenticated %}
+                    <div class="sidebar-card cta-card">
+                        <h3><i class="fas fa-users"></i> Join Us!</h3>
+                        <p>Create an account to start writing your own blog posts.</p>
+                        <a href="{% url 'register' %}" class="btn btn-success">
+                            <i class="fas fa-user-plus"></i> Register Now
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.home-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.hero-section {
+    text-align: center;
+    padding: 60px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    color: white;
+    margin-bottom: 40px;
+}
+
+.hero-section h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+    font-weight: 800;
+}
+
+.hero-subtitle {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.9);
+    max-width: 600px;
+    margin: 0 auto 30px;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-lg {
+    padding: 15px 30px;
+    font-size: 18px;
+    border-radius: 50px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary.btn-lg {
+    background: #42b883;
+    border: none;
+}
+
+.btn-secondary.btn-lg {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid white;
+}
+
+.featured-posts {
+    margin-bottom: 60px;
+}
+
+.featured-posts h2 {
+    color: #333;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.featured-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+.featured-post {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s;
+}
+
+.featured-post:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+.featured-image {
+    height: 200px;
+    overflow: hidden;
+}
+
+.featured-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s;
+}
+
+.featured-post:hover .featured-image img {
+    transform: scale(1.05);
+}
+
+.featured-content {
+    padding: 25px;
+}
+
+.featured-content h3 {
+    margin: 0 0 15px 0;
+    font-size: 20px;
+}
+
+.featured-content h3 a {
+    color: #333;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.featured-content h3 a:hover {
+    color: #667eea;
+}
+
+.post-meta {
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.post-excerpt {
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.btn-read {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.home-grid {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 40px;
+}
+
+.recent-posts h2 {
+    color: #333;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.posts-list {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.post-item {
+    margin-bottom: 25px;
+}
+
+.post-item:last-child {
+    margin-bottom: 0;
+}
+
+.post-item-content h3 {
+    margin: 0 0 10px 0;
+}
+
+.post-item-content h3 a {
+    color: #333;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.post-item-content h3 a:hover {
+    color: #667eea;
+}
+
+.read-more {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.view-all {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.home-sidebar {
+    position: sticky;
+    top: 100px;
+    height: fit-content;
+}
+
+.sidebar-card {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-card h3 {
+    color: #333;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.categories-list {
+    list-style: none;
+}
+
+.categories-list li {
+    margin-bottom: 10px;
+}
+
+.categories-list a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    color: #555;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.categories-list a:hover {
+    background: #667eea;
+    color: white;
+    transform: translateX(5px);
+}
+
+.categories-list .badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: inherit;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+    text-align: center;
+}
+
+.stat-item {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.stat-number {
+    font-size: 24px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 5px;
+}
+
+.cta-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+}
+
+.cta-card h3, .cta-card p {
+    color: white;
+}
+
+.cta-card .btn-success {
+    background: #42b883;
+    border: none;
+    color: white;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.empty-state i {
+    color: #ddd;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 992px) {
+    .home-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .home-sidebar {
+        position: static;
+        margin-top: 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-section h1 {
+        font-size: 36px;
+    }
+    
+    .hero-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .hero-actions .btn-lg {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .featured-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

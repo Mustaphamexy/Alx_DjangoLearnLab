@@ -1,0 +1,244 @@
+{% extends 'blog/base.html' %}
+{% load static %}
+
+{% block title %}Edit Comment - Django Blog{% endblock %}
+
+{% block content %}
+<div class="comment-form-container">
+    <div class="form-header">
+        <h1><i class="fas fa-edit"></i> Edit Comment</h1>
+        <p class="subtitle">Update your comment on "{{ object.post.title }}"</p>
+    </div>
+    
+    <div class="comment-form-content">
+        <form method="POST" class="comment-form">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-error">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="{{ form.content.id_for_label }}">
+                    <i class="fas fa-comment"></i> Comment *
+                </label>
+                {{ form.content }}
+                {% if form.content.errors %}
+                    <div class="form-error">{{ form.content.errors }}</div>
+                {% endif %}
+                <small class="form-text">Minimum 5 characters, maximum 1000 characters.</small>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Update Comment
+                </button>
+                <a href="{% url 'post-detail' object.post.slug %}#comments" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <a href="{% url 'comment-delete' object.id %}" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Delete
+                </a>
+            </div>
+        </form>
+        
+        <div class="comment-preview">
+            <h3><i class="fas fa-eye"></i> Preview</h3>
+            <div class="preview-content">
+                <div class="comment-author">
+                    <div class="author-avatar">
+                        {% if user.profile.profile_picture %}
+                            <img src="{{ user.profile.profile_picture.url }}" 
+                                 alt="{{ user.username }}">
+                        {% else %}
+                            <div class="author-avatar-default">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="author-info">
+                        <span class="author-name">{{ user.get_full_name|default:user.username }}</span>
+                        <span class="comment-date">Just now</span>
+                    </div>
+                </div>
+                <div class="preview-text" id="preview-text">
+                    {% if form.content.value %}
+                        {{ form.content.value|linebreaks }}
+                    {% else %}
+                        Your comment will appear here...
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('id_content');
+    const preview = document.getElementById('preview-text');
+    
+    textarea.addEventListener('input', function() {
+        preview.innerHTML = this.value.replace(/\n/g, '<br>');
+    });
+    
+    // Character counter
+    const counter = document.createElement('div');
+    counter.className = 'char-counter';
+    counter.id = 'comment-counter';
+    textarea.parentNode.insertBefore(counter, textarea.nextSibling);
+    
+    function updateCounter() {
+        const count = textarea.value.length;
+        counter.textContent = `${count}/1000 characters`;
+        counter.className = `char-counter ${count >= 5 && count <= 1000 ? 'valid' : 'invalid'}`;
+    }
+    
+    textarea.addEventListener('input', updateCounter);
+    updateCounter();
+});
+</script>
+
+<style>
+.comment-form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.form-header h1 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.form-header .subtitle {
+    color: #666;
+    font-size: 18px;
+}
+
+.comment-form-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+}
+
+.comment-form {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.comment-preview {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.comment-preview h3 {
+    color: #333;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.preview-content {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.comment-author {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.author-avatar img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.author-avatar-default {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #667eea;
+    font-size: 20px;
+}
+
+.author-info {
+    flex: 1;
+}
+
+.author-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.comment-date {
+    color: #888;
+    font-size: 13px;
+}
+
+.preview-text {
+    color: #444;
+    line-height: 1.6;
+}
+
+.char-counter {
+    font-size: 12px;
+    margin-top: 5px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.char-counter.valid {
+    background: #d4edda;
+    color: #155724;
+}
+
+.char-counter.invalid {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+    padding-top: 30px;
+    border-top: 1px solid #eee;
+}
+
+.form-actions .btn {
+    flex: 1;
+}
+
+@media (max-width: 768px) {
+    .comment-form-content {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

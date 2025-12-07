@@ -1,0 +1,141 @@
+<!-- blog/templates/blog/base.html - UPDATED NAVIGATION -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Django Blog{% endblock %}</title>
+    {% load static %}
+    
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+    <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="{% static 'images/favicon.ico' %}">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Meta Tags for SEO -->
+    <meta name="description" content="A modern Django blog application with authentication and CRUD operations">
+    <meta name="keywords" content="django, blog, python, web development">
+    <meta name="author" content="Django Blog">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <a href="{% url 'home' %}" class="brand-link">
+                        <i class="fas fa-blog"></i> Django Blog
+                    </a>
+                </div>
+                
+                <ul class="nav-menu">
+                    <li><a href="{% url 'home' %}"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="{% url 'post-list' %}"><i class="fas fa-blog"></i> Blog Posts</a></li>  <!-- Fixed URL name -->
+                    <li><a href="{% url 'tag-cloud' %}"><i class="fas fa-tags"></i> Tags</a></li>
+                    
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'post-create' %}"><i class="fas fa-plus"></i> Create Post</a></li>  <!-- Fixed URL name -->
+                        <li><a href="{% url 'user-posts' %}"><i class="fas fa-list"></i> My Posts</a></li>
+                    {% endif %}
+                </ul>
+                
+                <div class="nav-right">
+                    <!-- Search Form -->
+                    <form method="GET" action="{% url 'search-posts' %}" class="search-form">
+                        <input type="text" name="query" placeholder="Search posts..." value="{{ request.GET.query|default:'' }}">
+                        <button type="submit"><i class="fas fa-search"></i></button>
+                    </form>
+                    
+                    {% if user.is_authenticated %}
+                        <div class="user-menu dropdown">
+                            <button class="user-dropdown-btn">
+                                {% if user.profile.profile_picture %}
+                                    <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="user-avatar">
+                                {% else %}
+                                    <div class="user-avatar-default">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                {% endif %}
+                                <span class="username">{{ user.username }}</span>
+                                <i class="fas fa-caret-down"></i>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="{% url 'profile' %}" class="dropdown-item">
+                                    <i class="fas fa-user"></i> Profile
+                                </a>
+                                <a href="{% url 'user-posts' %}" class="dropdown-item">
+                                    <i class="fas fa-list"></i> My Posts
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <form action="{% url 'logout' %}" method="post" class="logout-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item logout-btn">
+                                        <i class="fas fa-sign-out-alt"></i> Logout
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="auth-links">
+                            <a href="{% url 'login' %}" class="btn-login">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a>
+                            <a href="{% url 'register' %}" class="btn-register">
+                                <i class="fas fa-user-plus"></i> Register
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <!-- Messages Display -->
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                        <button type="button" class="close-btn" onclick="this.parentElement.style.display='none'">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="content">
+            {% block content %}
+            <!-- Page-specific content goes here -->
+            {% endblock %}
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2024 Django Blog - Authentication System</p>
+            <p class="footer-links">
+                <a href="{% url 'home' %}">Home</a> | 
+                <a href="{% url 'post-list' %}">Blog Posts</a> | 
+                <a href="{% url 'tag-cloud' %}">Tags</a>
+                {% if not user.is_authenticated %}
+                    | <a href="{% url 'login' %}">Login</a> | 
+                    <a href="{% url 'register' %}">Register</a>
+                {% else %}
+                    | <a href="{% url 'profile' %}">Profile</a> | 
+                    <a href="{% url 'post-create' %}">Create Post</a> | 
+                    <a href="{% url 'user-posts' %}">My Posts</a>
+                {% endif %}
+            </p>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/scripts.js' %}"></script>
+</body>
+</html>
