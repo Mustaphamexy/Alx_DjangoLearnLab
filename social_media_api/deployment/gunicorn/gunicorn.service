@@ -1,0 +1,21 @@
+# deployment/gunicorn/gunicorn.service
+[Unit]
+Description=social_media_api Gunicorn daemon
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/social_media_api
+Environment="PATH=/var/www/social_media_api/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=social_media_api.settings"
+ExecStart=/var/www/social_media_api/venv/bin/gunicorn \
+    --config /var/www/social_media_api/deployment/gunicorn/gunicorn_config.py \
+    social_media_api.wsgi:application
+
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

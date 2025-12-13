@@ -1,0 +1,54 @@
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+.env.local
+.env.prod
+
+# Media and Static files
+media/
+staticfiles/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+.coverage
+htmlcov/
+.coverage.*
+
+# Database backups
+*.dump
+*.backup
+*.sql
+
+# Docker
+*.tar.gz
+docker-compose.override.yml
+
+# Logs
+logs/*.log
+!logs/.gitkeep
+
+# Deployment
+*.pem
+*.key
+*.crt
