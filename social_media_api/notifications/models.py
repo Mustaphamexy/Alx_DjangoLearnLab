@@ -40,12 +40,13 @@ class Notification(models.Model):
     target = GenericForeignKey('target_content_type', 'target_object_id')
     
     read = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(auto_now_add=True)  # Changed from created_at to timestamp
+    created_at = models.DateTimeField(auto_now_add=True)  # Keep both for compatibility
     
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-timestamp']
         indexes = [
-            models.Index(fields=['recipient', 'read', 'created_at']),
+            models.Index(fields=['recipient', 'read', 'timestamp']),
             models.Index(fields=['recipient', 'notification_type']),
         ]
     
@@ -77,7 +78,8 @@ class Notification(models.Model):
             verb=verb,
             notification_type='like',
             target_content_type=content_type,
-            target_object_id=target.id
+            target_object_id=target.id,
+            timestamp=timezone.now()
         )
     
     @classmethod
@@ -89,7 +91,8 @@ class Notification(models.Model):
             verb=f'commented on your post: "{comment_text[:50]}..."' if comment_text else 'commented on your post',
             notification_type='comment',
             target_content_type=ContentType.objects.get_for_model(target),
-            target_object_id=target.id
+            target_object_id=target.id,
+            timestamp=timezone.now()
         )
     
     @classmethod
@@ -99,7 +102,8 @@ class Notification(models.Model):
             recipient=recipient,
             actor=actor,
             verb='started following you',
-            notification_type='follow'
+            notification_type='follow',
+            timestamp=timezone.now()
         )
     
     @classmethod
@@ -111,5 +115,6 @@ class Notification(models.Model):
             verb='posted something new',
             notification_type='post',
             target_content_type=ContentType.objects.get_for_model(target),
-            target_object_id=target.id
+            target_object_id=target.id,
+            timestamp=timezone.now()
         )

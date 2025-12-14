@@ -1,6 +1,6 @@
 # accounts/views.py
 
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -9,7 +9,6 @@ from django.contrib.auth import logout
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
 from .models import CustomUser
 from django.shortcuts import get_object_or_404
-from rest_framework import generics
 from .serializers import FollowSerializer, FollowUserSerializer, FollowListSerializer
 from notifications.models import Notification
 
@@ -84,7 +83,25 @@ class UserProfileDetailView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-        
+
+# Add GenericAPIView implementation for UserSearchView
+class UserSearchView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = FollowUserSerializer
+    
+    def get_queryset(self):
+        query = self.request.query_params.get('q', '')
+        if query:
+            return CustomUser.objects.all().filter(
+                username__icontains=query
+            ).exclude(id=self.request.user.id)[:10]
+        return CustomUser.objects.none()
+    
+    def get(self, request):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 class FollowUserView(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -114,7 +131,6 @@ class FollowUserView(APIView):
             request.user.following.add(user_to_follow)
             
             # Create notification for the followed user
-            from notifications.models import Notification
             Notification.create_follow_notification(
                 recipient=user_to_follow,
                 actor=request.user
@@ -157,8 +173,6 @@ class UnfollowUserView(APIView):
             # Remove from following
             request.user.following.remove(user_to_unfollow)
             
-            # No need to delete notification as it's a historical record
-            
             return Response({
                 'message': f'You have unfollowed {user_to_unfollow.username}',
                 'following': False,
@@ -185,15 +199,3 @@ class FollowingListView(generics.ListAPIView):
         user_id = self.kwargs.get('user_id')
         user = get_object_or_404(CustomUser, id=user_id)
         return user.following.all()
-
-class UserSearchView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = FollowUserSerializer
-    
-    def get_queryset(self):
-        query = self.request.query_params.get('q', '')
-        if query:
-            return CustomUser.objects.filter(
-                username__icontains=query
-            ).exclude(id=self.request.user.id)[:10]
-        return CustomUser.objects.none()
